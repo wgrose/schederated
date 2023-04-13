@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "453272669944",
+    "project_id": "schederated",
+    "storage_bucket": "schederated.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:453272669944:android:8b363e1e5f185dc8c0b50d",
+        "android_client_info": {
+          "package_name": "com.schederated.flutter_schederated"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "453272669944-v35sabpk9v51hh623ibnpj05mm1ghnkc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDGDt-3hajB5vKghgmpRBkywD-UFsQzUvQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "453272669944-v35sabpk9v51hh623ibnpj05mm1ghnkc.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "453272669944-edv2ecqp21j15f3hu6d75rd7s059h6tn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.flutterSchederated"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
