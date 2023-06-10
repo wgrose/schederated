@@ -8,17 +8,17 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+  runApp(const SchederatedApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class SchederatedApp extends StatelessWidget {
+  const SchederatedApp({super.key});
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Schederated',
+      title: 'List Share - http://lsha.re',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: const SchederatedHomePage(title: 'Schederated'),
+      home: const SchederatedHomePage(title: 'List Share - http://lsha.re'),
     );
   }
 }
