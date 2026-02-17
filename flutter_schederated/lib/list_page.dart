@@ -3,17 +3,17 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_ui_firestore/firebase_ui_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // new
 
 import 'lists.dart';
 import 'package:flutter/services.dart'; // new
 import 'src/widgets.dart';
 
 class ListPage extends StatefulWidget {
-  const ListPage({super.key, required this.listId, required this.title});
+  const ListPage({super.key, required this.listId, this.join = false});
 
   final String listId;
-  final String title;
-  final bool join; // new
+  final bool join;
 
   @override
   State<ListPage> createState() => _ListPageState();
@@ -57,6 +57,30 @@ class _ListPageState extends State<ListPage> {
     }
   }
 
+  Future<String> _createInvite() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception('Must be signed in');
+    
+    // Check if invite exists
+    final query = await FirebaseFirestore.instance
+        .collection('invites')
+        .where('listId', isEqualTo: widget.listId)
+        .limit(1)
+        .get();
+    
+    if (query.docs.isNotEmpty) {
+      return query.docs.first.id;
+    }
+
+    // Create new
+    final doc = await FirebaseFirestore.instance.collection('invites').add({
+      'listId': widget.listId,
+      'created': FieldValue.serverTimestamp(),
+      'creator': user.uid,
+    });
+    return doc.id;
+  }
+
   Future<void> _addItem() async {
     if (_controller.text.isEmpty) return;
     
@@ -76,7 +100,15 @@ class _ListPageState extends State<ListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance.collection('lists').doc(widget.listId).snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData && snapshot.data!.data() != null) {
+              return Text(snapshot.data!.data()!['title'] as String);
+            }
+            return const Text('Loading...');
+          },
+        ),
         actions: [
           IconButton(
             onPressed: () {
@@ -88,10 +120,8 @@ class _ListPageState extends State<ListPage> {
                     children: [
                       SimpleDialogOption(
                         onPressed: () {
-                          // Copy View Link (current URL without join param)
-                          final url = Uri.base.replace(queryParameters: {
-                            'title': widget.title,
-                          });
+                          // Copy View Link (current URL clean)
+                          final url = Uri.base.replace(queryParameters: {});
                           Clipboard.setData(ClipboardData(text: url.toString()));
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -101,17 +131,31 @@ class _ListPageState extends State<ListPage> {
                         child: const Text('Copy View Link (Read-Only)'),
                       ),
                       SimpleDialogOption(
-                        onPressed: () {
-                          // Copy Join Link (add join=true)
-                          final url = Uri.base.replace(queryParameters: {
-                            'title': widget.title,
-                            'join': 'true',
-                          });
-                          Clipboard.setData(ClipboardData(text: url.toString()));
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Join link copied!')),
-                          );
+                        onPressed: () async {
+                          // Copy Join Link (via invites collection)
+                          Navigator.pop(context); // Close dialog first to avoid blocking? Or show generating?
+                          // Let's keep dialog open or show loading. But easy way: close and toast "Generating..." if slow.
+                          // Actually, just wait.
+                          
+                          try {
+                            final inviteId = await _createInvite();
+                            final url = Uri.base.replace(
+                              path: '/join/$inviteId',
+                              queryParameters: {},
+                            );
+                            Clipboard.setData(ClipboardData(text: url.toString()));
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Join link copied!')),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error creating invite: $e')),
+                              );
+                            }
+                          }
                         },
                         child: const Text('Copy Join Link (Edit Access)'),
                       ),

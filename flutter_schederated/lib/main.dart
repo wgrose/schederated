@@ -10,8 +10,8 @@ import 'package:provider/provider.dart';
 import 'app_state.dart';
 import 'firebase_options.dart';
 import 'home_page.dart';
-import 'home_page.dart';
-import 'list_page.dart'; // new
+import 'join_page.dart';
+import 'list_page.dart';
 import 'lists_page.dart';
 import 'new_list.dart';
 
@@ -49,12 +49,18 @@ class App extends StatelessWidget {
                   path: ':id',
                   builder: (context, state) {
                     final id = state.pathParameters['id']!;
-                    final title = state.uri.queryParameters['title'] ?? 'List';
-                    final join = state.uri.queryParameters['join'] == 'true'; // new
-                    return ListPage(listId: id, title: title, join: join); // updated
+                    final join = state.uri.queryParameters['join'] == 'true';
+                    return ListPage(listId: id, join: join);
                   },
                 ),
               ],
+            ),
+            GoRoute(
+              path: 'join/:inviteId',
+              builder: (context, state) {
+                final inviteId = state.pathParameters['inviteId']!;
+                return JoinPage(inviteId: inviteId);
+              },
             ),
             GoRoute(
               path: 'new-list',
