@@ -1,6 +1,19 @@
-import 'firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
+import 'app_state.dart';
+import 'firebase_options.dart';
+import 'home_page.dart';
+import 'home_page.dart';
+import 'list_page.dart'; // new
+import 'lists_page.dart';
+import 'new_list.dart';
 
 
 Future<void> main() async {
@@ -8,115 +21,141 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const SchederatedApp());
+  runApp(ChangeNotifierProvider(
+    create: (context) => ApplicationState(),
+    builder: ((context, child) => const App()),
+  ));
 }
 
-class SchederatedApp extends StatelessWidget {
-  const SchederatedApp({super.key});
-
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'List Share - http://lsha.re',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-      ),
-      home: const SchederatedHomePage(title: 'List Share - http://lsha.re'),
-    );
-  }
-}
-
-class SchederatedHomePage extends StatefulWidget {
-  const SchederatedHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<SchederatedHomePage> createState() => _SchederatedHomePageState();
-}
-
-class _SchederatedHomePageState extends State<SchederatedHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+// Add GoRouter configuration inside the App class
+class App extends StatelessWidget {
+  const App({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+    final appState = context.watch<ApplicationState>();
+
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const HomePage(),
+          routes: [
+            GoRoute(
+              path: 'lists',
+              builder: (context, state) => const ListsPage(),
+              routes: [
+                GoRoute(
+                  path: ':id',
+                  builder: (context, state) {
+                    final id = state.pathParameters['id']!;
+                    final title = state.uri.queryParameters['title'] ?? 'List';
+                    final join = state.uri.queryParameters['join'] == 'true'; // new
+                    return ListPage(listId: id, title: title, join: join); // updated
+                  },
+                ),
+              ],
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
+            GoRoute(
+              path: 'new-list',
+              builder: (context, state) {
+                return const NewList();
+              },
+            ),
+            GoRoute(
+              path: 'sign-in',
+              builder: (context, state) {
+                return SignInScreen(
+                  actions: [
+                    ForgotPasswordAction(((context, email) {
+                      final uri = Uri(
+                        path: '/sign-in/forgot-password',
+                        queryParameters: <String, String?>{
+                          'email': email,
+                        },
+                      );
+                      context.push(uri.toString());
+                    })),
+                    AuthStateChangeAction(((context, state) {
+                      final user = switch (state) {
+                        SignedIn state => state.user,
+                        UserCreated state => state.credential.user,
+                        _ => null
+                      };
+                      if (user == null) {
+                        return;
+                      }
+                      if (state is UserCreated) {
+                        user.updateDisplayName(user.email!.split('@')[0]);
+                      }
+                      if (!user.emailVerified) {
+                        user.sendEmailVerification();
+                        const snackBar = SnackBar(
+                            content: Text(
+                                'Please check your email to verify your email address'));
+                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                      }
+                      context.pushReplacement('/lists');
+                    })),
+                  ],
+                );
+              },
+              routes: [
+                GoRoute(
+                  path: 'forgot-password',
+                  builder: (context, state) {
+                    final arguments = state.uri.queryParameters;
+                    return ForgotPasswordScreen(
+                      email: arguments['email'],
+                      headerMaxExtent: 200,
+                    );
+                  },
+                ),
+              ],
+            ),
+            GoRoute(
+              path: 'profile',
+              builder: (context, state) {
+                return ProfileScreen(
+                  providers: const [],
+                  actions: [
+                    SignedOutAction((context) {
+                      context.pushReplacement('/');
+                    }),
+                  ],
+                );
+              },
             ),
           ],
         ),
+      ],
+      redirect: (context, state) {
+        final loggedIn = appState.loggedIn;
+        final isLoggingIn = state.uri.toString() == '/sign-in';
+        final isCreatingList = state.uri.toString() == '/new-list';
+        if (loggedIn && isLoggingIn) return '/lists';
+        if (loggedIn && state.uri.toString() == '/') return '/lists';
+        if (!loggedIn && isCreatingList) return '/sign-in';
+        
+        return null;
+      },
+      refreshListenable: appState,
+    );
+
+     return MaterialApp.router(
+      title: 'List Share - http://lsha.re',
+      theme: ThemeData(
+        buttonTheme: Theme.of(context).buttonTheme.copyWith(
+              highlightColor: Colors.deepPurple,
+            ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        textTheme: GoogleFonts.robotoTextTheme(
+          Theme.of(context).textTheme,
+        ),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        useMaterial3: true,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      routerConfig: router,
     );
   }
 }
