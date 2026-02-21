@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';          // new
 import 'package:go_router/go_router.dart';
 
 import 'app_state.dart';                          // new
-import 'src/authentication.dart';                 // new
+
 import 'src/widgets.dart';
 
 class HomePage extends StatelessWidget {
@@ -49,24 +49,33 @@ class HomePage extends StatelessWidget {
       body: ListView(
         children: <Widget>[
           Consumer<ApplicationState>(
-            builder: (context, appState, _) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Header('What is this app?'),
-                const Paragraph(
-                  'An AI powered smart list sharing app for families and friends. Create an account to get started.',
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: StyledButton(
-                    onPressed: () {
-                      context.push('/sign-in');
-                    },
-                    child: const Text('Sign In'),
+            builder: (context, appState, _) {
+              if (appState.loggedIn) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (context.mounted) {
+                    context.go('/lists');
+                  }
+                });
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Header('What is this app?'),
+                  const Paragraph(
+                    'An AI powered smart list sharing app for families and friends. Create an account to get started.',
                   ),
-                ),
-              ],
-            ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: StyledButton(
+                      onPressed: () {
+                        context.push('/sign-in');
+                      },
+                      child: const Text('Sign In'),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),

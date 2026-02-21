@@ -7,7 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart'; // new
 
 import 'lists.dart';
 import 'package:flutter/services.dart'; // new
-import 'src/widgets.dart';
+
 
 class ListPage extends StatefulWidget {
   const ListPage({super.key, required this.listId, this.join = false});

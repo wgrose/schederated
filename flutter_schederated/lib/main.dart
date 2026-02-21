@@ -1,9 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -104,6 +102,7 @@ class App extends StatelessWidget {
                       context.pushReplacement('/lists');
                     })),
                   ],
+                  showPasswordVisibilityToggle: true,
                 );
               },
               routes: [
@@ -140,7 +139,6 @@ class App extends StatelessWidget {
         final isLoggingIn = state.uri.toString() == '/sign-in';
         final isCreatingList = state.uri.toString() == '/new-list';
         if (loggedIn && isLoggingIn) return '/lists';
-        if (loggedIn && state.uri.toString() == '/') return '/lists';
         if (!loggedIn && isCreatingList) return '/sign-in';
         
         return null;

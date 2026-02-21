@@ -3,6 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'src/id_generator.dart';
+
+// TODO: Move this to a proper config or constants file
+const _kShortIdLength = 6;
+
 class NewList extends StatefulWidget {
   const NewList({super.key});
 
@@ -16,11 +21,12 @@ class _NewListState extends State<NewList> {
 
   Future<void> _createList() async {
     if (_formKey.currentState!.validate()) {
-      await FirebaseFirestore.instance.collection('lists').add({
+      final id = generateShortId(_kShortIdLength);
+      await FirebaseFirestore.instance.collection('lists').doc(id).set({
         'title': _controller.text,
         'created': FieldValue.serverTimestamp(),
         'creator': FirebaseAuth.instance.currentUser!.uid,
-        'members': [FirebaseAuth.instance.currentUser!.uid], // new
+        'members': [FirebaseAuth.instance.currentUser!.uid],
       });
       if (mounted) {
         context.pop();

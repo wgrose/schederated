@@ -1,8 +1,7 @@
-import 'dart:convert';
+
 
 class Document {
-  final Map<String, Object?> _json;
-  Document() : _json = jsonDecode(documentJson);
+  Document();
 }
 
 const documentJson = '''

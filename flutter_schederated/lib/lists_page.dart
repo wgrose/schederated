@@ -39,7 +39,7 @@ class ListsPage extends StatelessWidget {
                 title: Text(list.title),
                 subtitle: Text(list.created.toString()),
                 onTap: () {
-                  context.push('/lists/${list.id}');
+                  context.go('/lists/${list.id}');
                 },
               ),
           ],
